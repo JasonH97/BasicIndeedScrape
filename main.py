@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# TODO: get query and location as args
+# TODO: allow user to queue up multiple titles & locations
+
 from pathlib import Path
 from random import choice
 from requests_html import HTMLSession
@@ -38,24 +41,25 @@ def parseData(html):
     # code to parse html we obtained
     doc = lxml.html.fromstring(html)
     data = []
+    rootXpath = './table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/'
     postings = doc.xpath('//div[@class="job_seen_beacon"]')
     for p in postings:
-        try: title = p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div/h2/a/span/@title')[0]
+        try: title = p.xpath(rootXpath+'div/h2/a/span/@title')[0]
         except: title = "-"
 
-        try: company = p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div[contains(@class,"companyInfo")]/span/text()')[0]
+        try: company = p.xpath(rootXpath+'div[contains(@class,"companyInfo")]/span')[0].xpath('./a/text()|./text()')[0]
         except: company = "-"
 
-        try: location = p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div[contains(@class,"companyInfo")]/div[@class="companyLocation"]/span[not(@class)]/text()')[0]
+        try: location = p.xpath(rootXpath+'div[contains(@class,"companyInfo")]/div/text()')[0]
         except: location = "-"
 
-        try: pay = p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div/div[contains(@class,"salary")]/div/text()')[0]
+        try: pay = p.xpath(rootXpath+'div/div[contains(@class,"salary")]/div/text()')[0] # purposfully not grabbing "Estimated" data
         except: pay = "-"
 
-        try: jobtype = p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div/div/div/svg[@aria-label="Job type"]/../text()')[0]
+        try: jobtype = p.xpath(rootXpath+'div/div/div/svg[@aria-label="Job type"]/../text()')[0]
         except: jobtype = "-"
 
-        try: url = "https://www.indeed.com" + p.xpath('./table[contains(@class,"main")]/tbody/tr/td[@class="resultContent"]/div/h2/a/@href')[0]
+        try: url = "https://www.indeed.com" + p.xpath(rootXpath+'div/h2/a/@href')[0]
         except: continue
         data.append([title,company,location,pay,jobtype,url])
     return data
@@ -72,7 +76,7 @@ def writeData(data):
     # code to write parsed data to output file
     global outputFile
     with open(outputFile,'a') as f:
-        csvwriter = csv.writer(f,delimiter=",",quoting=csv.QUOTE_MINIMAL)
+        csvwriter = csv.writer(f,delimiter=",",quoting=csv.QUOTE_ALL)
         for datum in data:
             csvwriter.writerow(datum)
 
@@ -80,7 +84,7 @@ def prepCSV():
     global outputFile
     if (Path("./"+outputFile).is_file() != True):
         with open(outputFile,'w') as f:
-            csvwriter = csv.writer(f,delimiter=",",quoting=csv.QUOTE_MINIMAL)
+            csvwriter = csv.writer(f,delimiter=",",quoting=csv.QUOTE_ALL)
             csvwriter.writerow(["TITLE","COMPANY","LOCATION","PAY","JOBTYPE","URL"])
 
 
