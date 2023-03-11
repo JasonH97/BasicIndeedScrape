@@ -3,6 +3,7 @@
 # TODO: get query and location as args
 # TODO: allow user to queue up multiple titles & locations
 
+from salaries import normalize
 from pathlib import Path
 from random import choice
 from requests_html import HTMLSession
@@ -53,7 +54,7 @@ def parseData(html):
         try: location = p.xpath(rootXpath+'div[contains(@class,"companyInfo")]/div/text()')[0]
         except: location = "-"
 
-        try: pay = p.xpath(rootXpath+'div/div[contains(@class,"salary")]/div/text()')[0] # purposfully not grabbing "Estimated" data
+        try: pay = normalize(p.xpath(rootXpath+'div/div[contains(@class,"salary")]/div/text()')[0]) # purposfully not grabbing "Estimated" data
         except: pay = "-"
 
         try: jobtype = p.xpath(rootXpath+'div/div/div/svg[@aria-label="Job type"]/../text()')[0]
